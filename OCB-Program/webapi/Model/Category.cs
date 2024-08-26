@@ -4,6 +4,6 @@
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public List<Results> Results { get; set; }
+        public List<Outlay> Outlays { get; set; }
     }
 }
