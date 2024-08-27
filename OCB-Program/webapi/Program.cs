@@ -15,7 +15,6 @@ builder.Services.AddControllers()
         });
 
 builder.Services.AddDbContext<ApplicationContext>(options => options.UseSqlServer(connection));
-builder.Services.AddTransient<HomeService>();
 builder.Services.AddTransient<ExcelService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

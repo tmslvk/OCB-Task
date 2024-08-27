@@ -1,47 +1,32 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <div class="app">
+  </div>
+  <div class="block">
+  </div>
+  <router-view />
 </template>
 
+<script>
+import { mapState } from "vuex";
+import Home from "./components/Home.vue";
+
+export default {
+  components: {
+    Home,
+  },
+};
+</script>
+
 <style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+.app {
+  background: rgb(6, 92, 117);
+  background: linear-gradient(
+    352deg,
+    rgba(6, 92, 117, 1) 7%,
+    rgba(39, 62, 189, 1) 42%,
+    rgba(9, 19, 158, 1) 86%
+  );
 }
 </style>
+
+

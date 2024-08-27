@@ -11,7 +11,11 @@
     "predev": "node aspnetcore-https.js"
   },
   "dependencies": {
-    "vue": "^3.4.29"
+    "axios": "^1.7.5",
+    "bulma": "^1.0.2",
+    "vue": "^3.4.29",
+    "vue-router": "^4.4.3",
+    "vuex": "^4.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.5",
