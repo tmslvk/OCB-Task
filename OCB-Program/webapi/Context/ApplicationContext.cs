@@ -8,6 +8,7 @@ namespace webapi.Context
         public DbSet<Category> Categories { get; set; } = null!;
         public DbSet<Document> Documents { get; set; } = null!;
         public DbSet<Outlay> Outlays { get; set; } = null!;
+        public DbSet<ExcelFile> ExcelFiles { get; set; }
         public ApplicationContext()
         {
 
