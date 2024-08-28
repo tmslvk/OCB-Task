@@ -70,7 +70,7 @@ export default {
       }
       try {
         const response = await axios.post(
-          "https://localhost:7235/api/home/upload",
+          "https://localhost:7235/api/Home/upload-excel",
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },

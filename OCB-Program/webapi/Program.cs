@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using webapi;
 using webapi.Context;
 using webapi.Services;
 
@@ -13,6 +14,13 @@ builder.Services.AddCors(options =>
     {
         builder.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod();
     });
+    options.AddPolicy("AllowSpecificOrigins",
+        policy =>
+        {
+            policy.WithOrigins("https://localhost:5173")  // Разрешите этот источник
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
 });
 builder.Services.AddControllers()
         .AddJsonOptions(options =>
@@ -21,7 +29,7 @@ builder.Services.AddControllers()
         });
 builder.Services.AddControllers();
 
-builder.Services.AddDbContext<ApplicationContext>(options => options.UseSqlServer(connection));
+builder.Services.AddDbContext<OCBContext>(options => options.UseSqlServer(connection));
 builder.Services.AddTransient<ExcelService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -29,7 +37,20 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 app.UseRouting();
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
 app.UseCors("AllowAnyOrigins");
+app.UseCors("AllowSpecificOrigins");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using OfficeOpenXml;
 using webapi.Interfaces;
 using webapi.Model;
 using webapi.Services;
@@ -17,10 +18,11 @@ namespace webapi.Controllers
         {
             _config = config;
             this.service = service;
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         }
 
-        [HttpPost("upload")]
-        public async Task<IActionResult> Upload([FromForm]IFormFile file)
+        [HttpPost("upload-excel")]
+        public async Task<IActionResult> Upload(IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
@@ -33,10 +35,8 @@ namespace webapi.Controllers
                 {
                     await file.CopyToAsync(stream);
                     stream.Position = 0;
-
-                    // Загружаем документ и данные из Excel
-                    int documentId = await service.UploadDocumentAndDataAsync(stream, file.FileName);
-
+                    var excelFile = await service.UploadExcelFileAsync(stream, file.FileName);
+                    int documentId = await service.UploadDocumentAndDataAsync(stream, file.FileName, excelFile);
                     return Ok(new { DocumentId = documentId });
                 }
             }

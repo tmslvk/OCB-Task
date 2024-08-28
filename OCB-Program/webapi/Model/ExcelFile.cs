@@ -6,5 +6,6 @@
         public string Filename { get; set; }
         public DateTime UploadDate { get; set; }
         public byte[] FileContent { get; set; }
+        public Document? Document { get; set; }
     }
 }
