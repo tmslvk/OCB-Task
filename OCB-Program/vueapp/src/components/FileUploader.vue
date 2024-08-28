@@ -1,6 +1,6 @@
 <template>
   <div class="block">
-    <div class="columns is-centered">
+    <div class="columns is-three-quarters">
       <title>Upload files</title>
       <input
         class="is-medium"
@@ -15,7 +15,13 @@
       <p v-if="uploadStatus">{{ uploadStatus }}</p>
     </div>
     <div class="block">
-      <h2>Uploaded Files</h2>
+      <div class="block">
+        <div class="columns is-centered">
+          <h2>Uploaded Files</h2>
+        </div>
+
+      </div>
+
       <ul>
         <li
           v-for="file in files"
@@ -27,11 +33,14 @@
 
       <!-- Отображение данных документа -->
       <div v-if="document">
-        <h2>Document Data</h2>
-        <p><strong>Bank Name:</strong> {{ document.bankName }}</p>
-        <p><strong>Start Date:</strong> {{ new Date(document.startDate).toLocaleDateString() }}</p>
-        <p><strong>End Date:</strong> {{ new Date(document.endDate).toLocaleDateString() }}</p>
-        <!-- Добавьте больше полей по вашему усмотрению -->
+        <div class="box">
+          <div class="content">
+            <h2>Document Data</h2>
+            <p><strong>Bank Name:</strong> {{ document.bankName }}</p>
+            <p><strong>Start Date:</strong> {{ new Date(document.startDate).toLocaleDateString() }}</p>
+            <p><strong>End Date:</strong> {{ new Date(document.endDate).toLocaleDateString() }}</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -76,8 +85,8 @@ export default {
             headers: { "Content-Type": "multipart/form-data" },
           }
         );
-
-        this.uploadStatus = `File uploaded successfully! Document ID: ${response.data.DocumentId}`;
+        console.log(response.data);
+        this.uploadStatus = `File uploaded successfully! Document ID: ${response.data.documentId}`;
         await this.fetchUploadedFiles();
       } catch (error) {
         console.error("Error uploading file:", error);
@@ -90,6 +99,7 @@ export default {
           "https://localhost:7235/api/Home/files"
         );
         this.files = response.data;
+        console.log(response.data);
       } catch (error) {
         console.error("Error fetching files:", error);
       }
@@ -100,6 +110,7 @@ export default {
           `https://localhost:7235/api/Home/document/${id}`
         );
         this.document = response.data;
+        console.log(response.data);
       } catch (error) {
         console.error("Error fetching document data:", error);
       }
@@ -112,5 +123,22 @@ export default {
 </script>
 
 <style scoped>
-/* Добавьте свои стили здесь */
+.box {
+  background-color: rgb(188, 134, 199);
+  color: white;
+}
+.p {
+  padding: 1rem;
+}
+.block {
+  padding: 1rem;
+  margin: 1px;
+}
+.ul {
+  padding: 1rem;
+  margin: 3px;
+}
+.card-footer {
+  background-color: rgb(221, 72, 72);
+}
 </style>

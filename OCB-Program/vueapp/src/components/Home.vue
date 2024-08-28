@@ -3,7 +3,6 @@
     <div class="block">
       <div class="columns is-mobile is-centered">
         <div class="column is-half">
-          <div class="box">An area to load Excel files and so on</div>
           <div class="card">
             <div class="columns is-mobile is-centered">
               <button

@@ -21,6 +21,7 @@ namespace webapi.Controllers
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
         }
 
+        //запрос для добавления файла эксель в базу данных
         [HttpPost("upload-excel")]
         public async Task<IActionResult> Upload(IFormFile file)
         {
@@ -46,7 +47,7 @@ namespace webapi.Controllers
             }
         }
 
-        // Метод для просмотра списка загруженных файлов
+        // запрос для просмотра списка загруженных файлов
         [HttpGet("files")]
         public async Task<IActionResult> GetUploadedFiles()
         {
@@ -61,7 +62,7 @@ namespace webapi.Controllers
             }
         }
 
-        // Метод для отображения данных из СУБД по документу
+        // запрос для отображения данных из СУБД по документу
         [HttpGet("document/{id}")]
         public async Task<IActionResult> GetDocumentById(int id)
         {

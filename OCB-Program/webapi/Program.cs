@@ -8,20 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 string connection = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAnyOrigins", builder =>
-    {
-        builder.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod();
-    });
-    options.AddPolicy("AllowSpecificOrigins",
-        policy =>
-        {
-            policy.WithOrigins("https://localhost:5173")  // Разрешите этот источник
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        });
-});
+builder.Services.AddCors();
 builder.Services.AddControllers()
         .AddJsonOptions(options =>
         {
@@ -36,6 +23,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+app.UseCors(options =>
+{
+    options.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+});
+    
 app.UseRouting();
 
 app.UseHttpsRedirection();
@@ -49,8 +41,6 @@ app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
 });
-app.UseCors("AllowAnyOrigins");
-app.UseCors("AllowSpecificOrigins");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

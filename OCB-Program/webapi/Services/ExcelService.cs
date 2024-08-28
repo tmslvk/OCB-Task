@@ -18,6 +18,8 @@ namespace webapi.Services
             _context = context;
             ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
         }
+
+        //парсинг дат в определенном формате
         private List<DateTime> GetDates(string cellValue)
         {
             var dates = new List<DateTime>();
@@ -36,6 +38,7 @@ namespace webapi.Services
             return dates;
         }
 
+        //создание модели ExcelFile
         public async Task<ExcelFile> UploadExcelFileAsync(Stream fileStream, string fileName)
         {
             // Чтение данных из Excel
@@ -60,13 +63,14 @@ namespace webapi.Services
             return excelFile;
         }
 
+        //создание модели Document и последующее его использование в загрузках данных из файла Excel
         public async Task<int> UploadDocumentAndDataAsync(Stream fileStream, string fileName, ExcelFile excelFile)
         {
             using var package = new ExcelPackage(fileStream);
             var worksheet = package.Workbook.Worksheets[0];
             var rowCount = worksheet.Dimension.Rows;
 
-            // Извлекаем данные документа
+            // Извлекаем даты из документа
             var dates = GetDates(worksheet.Cells[3, 1].Text);
             var document = new Document
             {
@@ -77,25 +81,24 @@ namespace webapi.Services
                 ExcelFileId = excelFile.Id
             };
 
-            if (!await _context.Documents.AnyAsync(d => d.BankName == document.BankName && d.EndDate == document.EndDate && d.StartDate == document.StartDate))
+            if (await _context.Documents.AnyAsync(d => d.BankName == document.BankName && d.EndDate == document.EndDate && d.StartDate == document.StartDate))
             {
-                _context.Documents.Add(document);
-                await _context.SaveChangesAsync();
+                var documentFromDb = await GetDocumentByName(document.BankName, document.StartDate, document.EndDate);
 
-                // Загружаем категории
-                await UploadCategoriesFromWorksheetAsync(worksheet);
-
-                // Загружаем расходы
-                await UploadOutlaysFromWorksheetAsync(worksheet, document.Id);
-                return document.Id;
+                return documentFromDb.Id;
             }
-            var documentFromDb = await GetDocumentByName(document.BankName, document.StartDate, document.EndDate);
+            _context.Documents.Add(document);
+            await _context.SaveChangesAsync();
 
-            return documentFromDb.Id;
+            // Загружаем категории
+            await UploadCategoriesFromWorksheetAsync(worksheet);
+
+            // Загружаем расходы
+            await UploadOutlaysFromWorksheetAsync(worksheet, document.Id);
+            return document.Id;
         }
 
-
-
+        //добавление категорий
         private async Task UploadCategoriesFromWorksheetAsync(ExcelWorksheet worksheet)
         {
             var categories = ExtractCategoriesFromWorksheet(worksheet);
@@ -109,6 +112,7 @@ namespace webapi.Services
             }
             await _context.SaveChangesAsync();
         }
+        //извлечение категорий из листа excel
         private List<string> ExtractCategoriesFromWorksheet(ExcelWorksheet worksheet)
         {
             var categories = new List<string>();
@@ -117,7 +121,7 @@ namespace webapi.Services
             for (int row = 1; row <= rowCount; row++)
             {
                 var cellValue = worksheet.Cells[row, 1].Text;
-
+                //проверка на наличие слова "КЛАСС" и извлечение из строки сути расходов
                 if (cellValue.StartsWith("КЛАСС", StringComparison.OrdinalIgnoreCase))
                 {
                     int firstSpaceIndex = cellValue.IndexOf(' ', 6);
@@ -135,21 +139,24 @@ namespace webapi.Services
 
             return categories;
         }
-
+        //перенос в базу данных данных об расчетах
         private async Task UploadOutlaysFromWorksheetAsync(ExcelWorksheet worksheet, int documentId)
         {
             var rowCount = worksheet.Dimension.Rows;
             Category? currentCategory = null;
-
+            //получение категорий
             var categories = await GetCategories();
+            //создание списка встречающихся категорий
             var seenCategories = new List<Category>();
 
             for (int row = 8; row <= rowCount; row++)
             {
+                //создание переменной, которая будет хранить строку
                 var cells = worksheet.Cells[row, 1, row, 7].Select(cell => cell.Text.Trim()).ToArray();
 
                 var categoryName = ExtractCategoryName(cells[0]);
 
+                //если встречается КЛАСС Х то добавляем его в список просмотренных категорий
                 if (!string.IsNullOrEmpty(categoryName))
                 {
                     currentCategory = categories.FirstOrDefault(c => c.Name.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
@@ -164,7 +171,7 @@ namespace webapi.Services
 
                 if (seenCategories != null && cells.Length >= 7)
                 {
-                    // Получаем значения ячеек и очищаем их от лишних символов
+                    //получаем значения ячеек и очищаем их от лишних символов
                     var accountIdText = cells[0];
                     var iSaldoActiveText = CleanNumber(cells[1]);
                     var iSaldoPassiveText = CleanNumber(cells[2]);
@@ -193,6 +200,7 @@ namespace webapi.Services
                                 OSaldoActive = oSaldoActive,
                                 OSaldoPassive = oSaldoPassive,
                                 DocumentId = documentId,
+                                //при переносе данных из Excel в БД берется последняя добавленная категория из seenCategories
                                 Category = seenCategories.Last(),
                                 CategoryId = seenCategories.Last().Id,
                                 Document = await GetDocumentByIdAsync(documentId),
@@ -201,34 +209,39 @@ namespace webapi.Services
                         }
                         else
                         {
-                            // Логирование ошибки
+                            //логирование ошибки
                             Console.WriteLine($"Failed to parse values at row {row}: {string.Join(", ", cells)}");
                         }
                     }
                     else
                     {
-                        // Логирование ошибки парсинга AccountId
+                        //логирование ошибки парсинга AccountId
                         Console.WriteLine($"Failed to parse AccountId at row {row}: {accountIdText}");
                     }
                 }
                 else
                 {
-                    // Логирование ошибки недостаточного количества ячеек
+                    //логирование ошибки недостаточного количества ячеек
                     Console.WriteLine($"Insufficient cells at row {row}: {string.Join(", ", cells)}");
                 }
             }
 
             await _context.SaveChangesAsync();
         }
+
+        //преобразование строки в воспринимаемую парсером decimal строку
         private string CleanNumber(string text)
         {
             return new string(text.Where(c => !char.IsWhiteSpace(c)).ToArray()).Replace(",", ".");
         }
+
+        //получение документа по имени
         public async Task<Document?> GetDocumentByName(string bankName, DateTime startDate, DateTime endDate)
         {
             return await _context.Documents.FirstOrDefaultAsync(d => d.BankName == bankName && d.StartDate == startDate && d.EndDate == endDate);
         }
 
+        //получение списка документов
         public async Task<List<Document>> GetDocumentsAsync()
         {
             return await _context.Documents
@@ -237,10 +250,12 @@ namespace webapi.Services
                 .ToListAsync();
         }
 
+        //получение списка категорий
         public async Task<List<Category>> GetCategories()
         {
             return await _context.Categories.ToListAsync(); 
         }
+        //получение категории из строки Excel
         private string ExtractCategoryName(string cellText)
         {
             if (string.IsNullOrWhiteSpace(cellText))
@@ -248,13 +263,14 @@ namespace webapi.Services
                 return string.Empty;
             }
 
-            // Регулярное выражение для удаления текста "КЛАСС" и последующих цифр и пробелов
+            //регулярное выражение для удаления текста "КЛАСС" и последующих цифр и пробелов
             var match = Regex.Match(cellText, @"^\D*\d*\s*(.*)$");
 
-            // Возвращаем очищенное название категории
+            //возвращаем очищенное название категории
             return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
         }
 
+        //получение документа по айди
         public async Task<Document> GetDocumentByIdAsync(int id)
         {
             return await _context.Documents
@@ -262,6 +278,8 @@ namespace webapi.Services
                 .ThenInclude(o => o.Category)
                 .FirstOrDefaultAsync(d => d.Id == id);
         }
+
+        //получение загруженных файлов
         public async Task<List<ExcelFile>> GetUploadedFilesAsync()
         {
             return await _context.ExcelFiles.ToListAsync();
